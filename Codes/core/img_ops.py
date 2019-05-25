@@ -12,8 +12,8 @@ def load_hr_sm(scene_path):
     sm = load_image(scene_path + '/SM.png', dtype=np.bool)
     return (hr, sm)
 
-def load_lr_qm(scene_path,quality_map_only = False):
-    if not quality_map_only:
+def load_lr_qm(scene_path,quality_map_only = False,lr_only = False):
+    if not quality_map_only and not lr_only:
         lr_qm_images = []
         for lr_image in glob.glob(scene_path + "/LR*"):
             lr_image_path = lr_image
@@ -22,13 +22,21 @@ def load_lr_qm(scene_path,quality_map_only = False):
             qm = load_image(qm_image_path, dtype=np.bool)
             lr_qm_images.append((lr,qm))
         return lr_qm_images
-    else:
+    elif quality_map_only:
         qm_images = []
         for qm_image in glob.glob(scene_path + "/QM*"):
             qm_image_path = qm_image
             qm = load_image(qm_image_path, dtype=np.bool)
             qm_images.append(qm)
         return np.asarray(qm_images)
+    else:
+        lr_images = []
+        for lr_image in glob.glob(scene_path + "/LR*"):
+            lr_image_path = lr_image
+            lr = skimage.img_as_float64(load_image(lr_image_path, dtype=np.uint16))
+            lr_images.append(lr)
+        return np.asarray(lr_images)
+
 
 
 def bicubic_upscaling(image):
