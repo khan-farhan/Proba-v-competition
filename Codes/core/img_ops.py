@@ -13,6 +13,7 @@ def load_hr_sm(scene_path):
     return (hr, sm)
 
 def load_lr_qm(scene_path,quality_map_only = False,lr_only = False):
+    
     if not quality_map_only and not lr_only:
         lr_qm_images = []
         for lr_image in glob.glob(scene_path + "/LR*"):
@@ -22,6 +23,7 @@ def load_lr_qm(scene_path,quality_map_only = False,lr_only = False):
             qm = load_image(qm_image_path, dtype=np.bool)
             lr_qm_images.append((lr,qm))
         return lr_qm_images
+
     elif quality_map_only:
         qm_images = []
         for qm_image in glob.glob(scene_path + "/QM*"):
@@ -29,6 +31,7 @@ def load_lr_qm(scene_path,quality_map_only = False,lr_only = False):
             qm = load_image(qm_image_path, dtype=np.bool)
             qm_images.append(qm)
         return np.asarray(qm_images)
+
     else:
         lr_images = []
         for lr_image in glob.glob(scene_path + "/LR*"):
@@ -66,7 +69,9 @@ def upscaling_scene_images(scene_path):
         img /= len(maxclears)
     return img
 
-def median_scene(scene_path):
-    lr_images = [x[0] for x in load_lr_qm(scene_path)]
-    median_img_scene = np.nanmedian(lr_images,axis = 0)
-    return median_img_scene
+def median_scene(scene_path,with_clear = False):
+    if not with_clear:
+        lr_images = [x[0] for x in load_lr_qm(scene_path)]
+        median_img_scene = np.nanmedian(lr_images,axis = 0)
+        return median_img_scene
+    else:
