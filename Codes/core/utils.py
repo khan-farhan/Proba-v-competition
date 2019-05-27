@@ -18,6 +18,15 @@ def scene_id(scene_path):
     return scene_path.split('/')[-1]
 
 
+def load_images_path(data_path):
+    images_paths = []
+    for channel in ["/RED/","/NIR/"]:
+        for subfolders in os.listdir(data_path + channel):
+            for image_path in glob.glob(data_path + channel + subfolders + "/LR*"):
+                images_paths.append(image_path)
+                
+    return images_paths
+
 def generate_submissions(path,out):
 
     sub_archive = out + 'submission.zip'
@@ -47,14 +56,6 @@ def generate_submissions(path,out):
         zf.close()  
     print('\ndone. The submission-file is found at {}. Bye!'.format(sub_archive))
 
-def load_images_path(data_path):
-    images_paths = []
-    for channel in ["/RED/","/NIR/"]:
-        for subfolders in os.listdir(data_path + channel):
-            for image_path in glob.glob(data_path + channel + subfolders + "/LR*"):
-                images_paths.append(image_path)
-                
-    return images_paths
 
 baseline_cPSNR = pd.read_csv(
     os.path.dirname(os.path.abspath(__file__)) + '/../../Data/norm.csv',
