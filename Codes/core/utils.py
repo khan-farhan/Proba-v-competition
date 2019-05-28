@@ -7,6 +7,9 @@ import warnings
 from zipfile import ZipFile
 
 def scenes_paths(path):
+    """
+    Function for returing a list of path of all the scenes directory given path to data
+    """
     path_list = []
     for channel in ["/RED/","/NIR/"]:
         for scenes in os.listdir(path + channel):
@@ -15,10 +18,17 @@ def scenes_paths(path):
     return path_list
 
 def scene_id(scene_path):
+    """
+    Returns Id of a scene given it's scene path 
+    """
     return scene_path.split('/')[-1]
 
 
 def load_images_path(data_path):
+    """
+    Returns a list of all the LR image path given a scene directory path
+    """
+
     images_paths = []
     for channel in ["/RED/","/NIR/"]:
         for subfolders in os.listdir(data_path + channel):
@@ -28,7 +38,10 @@ def load_images_path(data_path):
     return images_paths
 
 def generate_submissions(path,out):
-
+    """
+    Generate a sample submission; this function is provided on competition website
+    Takes input as path to test directory and path to output directory
+    """
     sub_archive = out + 'submission.zip'
     
     print('generate sample solutions: ', end='', flush='True')
@@ -57,6 +70,9 @@ def generate_submissions(path,out):
     print('\ndone. The submission-file is found at {}. Bye!'.format(sub_archive))
 
 
+"""
+Baseline cPSNR values for the dataset's images. Used for normalizing scores.
+"""
 baseline_cPSNR = pd.read_csv(
     os.path.dirname(os.path.abspath(__file__)) + '/../../Data/norm.csv',
     names = ['scene', 'cPSNR'],

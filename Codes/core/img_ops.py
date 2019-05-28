@@ -9,23 +9,32 @@ def load_image(path,dtype):
     return skimage.io.imread(path, dtype=dtype)
 
 def load_hr_sm(scene_path):
-    hr = skimage.img_as_float64 (load_image(scene_path + '/HR.png', dtype=np.uint16))
+    """
+    Loads high resolution image and it's corresponding status map given path to scene directory
+    """
+    hr = skimage.img_as_float64(load_image(scene_path + '/HR.png', dtype=np.uint16))
     sm = load_image(scene_path + '/SM.png', dtype=np.bool)
     return (hr, sm)
 
 
 def load_lr_qm(scene_path,quality_map_only = False,lr_only = False):
+    """
+    Loads low resolution images and their corresponding quality map given path to scene directory
+    Can also loads LR images and Qm separately if the options are given
+    """
 
+    # both Lr and Qm are loaded together
     if not quality_map_only and not lr_only:
         lr_qm_images = []
         for lr_image in glob.glob(scene_path + "/LR*"):
             lr_image_path = lr_image
             qm_image_path = lr_image[:-10] + "/QM" + lr_image[-7:]
-            lr = skimage.img_as_float64(load_image(lr_image_path, dtype=np.uint16))
-            qm = load_image(qm_image_path, dtype=np.bool)
+            lr = skimage.img_as_float64(load_image(lr_image_path, dtype=np.uint16)) # loading Lr image and converting it to float
+            qm = load_image(qm_image_path, dtype=np.bool) # loading qm image as a boolean 
             lr_qm_images.append((lr,qm))
         return lr_qm_images
 
+    # loading qm only
     elif quality_map_only:
         qm_images = []
         for qm_image in glob.glob(scene_path + "/QM*"):
@@ -34,6 +43,7 @@ def load_lr_qm(scene_path,quality_map_only = False,lr_only = False):
             qm_images.append(qm)
         return np.asarray(qm_images)
 
+    # loading Lr images only
     else:
         lr_images = []
         for lr_image in glob.glob(scene_path + "/LR*"):
@@ -45,10 +55,17 @@ def load_lr_qm(scene_path,quality_map_only = False,lr_only = False):
 
 
 def bicubic_upscaling(image):
+    """
+    Bicubic scaling of a given image by a factor of 3
+    """
     return skimage.transform.rescale(image, scale=3, order=3, mode='edge',
                                   anti_aliasing=False, multichannel=False)
 
 def upscaling_scene_images(scene_path):
+
+    """
+    Bicubic upscaling of the images. This function is provided by the competition organizers
+    """
     clearance = []
     for lrc_fn in glob.glob(scene_path + '/QM*.png'):
         lrc = load_image(lrc_fn, dtype=np.bool)
@@ -90,7 +107,7 @@ def process_lr_images(scene_path,processing_type = "with_same_lr",fusion_type = 
         if fusion_type == "mean":
             lr_fused = np.nanmean(lr_images,axis = 0) 
         elif fusion_type == "mode":
-            lr_fused = scipy.stats.mode(lr_image, axis=0, nan_policy='omit').mode[0]
+            lr_fused = scipy.stats.mode(lr_images, axis=0, nan_policy='omit').mode[0]
         else:
             lr_fused = np.nanmedian(lr_images,axis = 0) 
 
