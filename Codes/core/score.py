@@ -41,7 +41,6 @@ def score_images(imgs, scenes_paths, *args):
     (hr, sm) tuples with the pre-loaded high-resolution images of those scenes.
     """
     return np.mean([
-#       score_image(*i)
          score_image(*i)
         for i in zip(imgs, scenes_paths, *args)
         ])
@@ -67,7 +66,30 @@ def hr_crops(hr, sm):
 
 
 # [============================================================================]
+def  test_score_image(sr, hr,sm,scene_id):
+    """
+    Calculate the individual score (cPSNR, clear Peak Signal to Noise Ratio) for
+    `sr`, a super-resolved image from the scene at `scene_path`.
+    
+    Parameters
+    ----------
+    sr : matrix of shape 384x384
+        super-resolved image.
+    scene_path : str
+        path where the scene's corresponding high-resolution image can be found.
+    hr_sm : tuple, optional
+        the scene's high resolution image and its status map. Loaded if `None`.
+    """
+    
+    
+    # "We assume that the pixel-intensities are represented
+    # as real numbers ∈ [0,1] for any given image."
 
+    
+    # "Let N(HR) be the baseline cPSNR of image HR as found in the file norm.csv."
+    N = baseline_cPSNR.loc[scene_id][0]
+    
+    return score_against_hr(sr, hr, sm, N)
 
 def  score_image(sr, scene_path, hr_sm=None):
     """
@@ -96,7 +118,7 @@ def  score_image(sr, scene_path, hr_sm=None):
     
 
 
-@numba.jit('f8(f8[:,:], f8[:,:], b1[:,:], f8)', nopython=True, parallel=True)
+@numba.jit(nopython=True, parallel=True)
 def score_against_hr(sr, hr, sm, N):
     """
     Numba-compiled version of the scoring function.
