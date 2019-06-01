@@ -18,6 +18,7 @@ for subpath in [input_data_path + 'train/RED/', input_data_path + 'train/NIR/']:
             median_image = median_image_scene(subpath + folder)
             img = bicubic_upscaling(median_image)
             call( 'cp {0} {1}'.format(subpath+folder+"/HR.png",output_data_path + folder + "_HR.png") , shell=True )
+            call( 'cp {0} {1}'.format(subpath+folder+"/SM.png",output_data_path + folder + "_SM.png") , shell=True )
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 skimage.io.imsave(output_data_path + folder + '.png', img)

@@ -88,7 +88,8 @@ def  test_score_image(sr, hr,sm,scene_id):
     
     # "Let N(HR) be the baseline cPSNR of image HR as found in the file norm.csv."
     N = baseline_cPSNR.loc[scene_id][0]
-    
+    print(N)
+    print("hi")
     return score_against_hr(sr, hr, sm, N)
 
 def  score_image(sr, scene_path, hr_sm=None):
@@ -107,18 +108,19 @@ def  score_image(sr, scene_path, hr_sm=None):
     """
     hr, sm = load_hr_sm(scene_path)
     
+    
     # "We assume that the pixel-intensities are represented
     # as real numbers ∈ [0,1] for any given image."
 
     
     # "Let N(HR) be the baseline cPSNR of image HR as found in the file norm.csv."
     N = baseline_cPSNR.loc[scene_id(scene_path)][0]
-    
+
     return score_against_hr(sr, hr, sm, N)
     
 
 
-@numba.jit(nopython=True, parallel=True)
+@numba.jit('f8(f8[:,:], f8[:,:], b1[:,:], f8)', nopython=True, parallel=True)
 def score_against_hr(sr, hr, sm, N):
     """
     Numba-compiled version of the scoring function.
