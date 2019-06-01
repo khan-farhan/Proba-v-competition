@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import warnings
 from zipfile import ZipFile
+from .img_ops import *
+from .SRCNN_model import *
 
 def scenes_paths(path):
     """
@@ -37,20 +39,43 @@ def load_images_path(data_path):
                 
     return images_paths
 
-def generate_submissions(path,out):
+def load_srcnn_model(shape):
+    """
+    Loads the trained srcnn model
+    """
+    srcnn_model = model(shape)
+    optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.2, amsgrad=False)
+    srcnn_model.compile(optimizer='adam', loss="mean_squared_error", metrics=['mean_squared_error']) 
+    srcnn_model.load_weights("../models/SRCNN/weights/weights.h5")
+    return srcnn_model
+
+
+def generate_submissions(path,out,mode):
     """
     Generate a sample submission; this function is provided on competition website
     Takes input as path to test directory and path to output directory
     """
+    if not os.path.exists(out):
+            os.mkdir(out)
+
     sub_archive = out + 'submission.zip'
     
-    print('generate sample solutions: ', end='', flush='True')
+    print('generate super resolved images: ', end='', flush='True')
     
     for subpath in [path + 'test/RED/', path + 'test/NIR/']:
         for folder in os.listdir(subpath):
-            median_image = median_scene(subpath + folder)
-            img = bicubic_upscaling(median_image)
-        
+            if mode == "median":
+                median_image = median_image_scene(subpath + folder)
+                img = bicubic_upscaling(median_image)
+            elif mode == "srcnn":
+                median_image = median_image_scene(subpath + folder)
+                median_image = bicubic_upscaling(median_image)
+                median_image = median_image.reshape(median_image.shape[0],median_image.shape[1],1)
+                srcnn_model = model(median_image.shape)
+                median_image = median_image.reshape(1,median_image.shape[0],median_image.shape[1],median_image.shape[2])
+                img = srcnn_model.predict(median_image,batch_size = 1)[0]
+                img = img.reshape(384,384)
+
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 skimage.io.imsave(out + folder + '.png', img)
@@ -67,7 +92,7 @@ def generate_submissions(path,out):
             print('*', end='', flush='True')
     finally:
         zf.close()  
-    print('\ndone. The submission-file is found at {}. Bye!'.format(sub_archive))
+    print('\ndone.')
 
 
 """
