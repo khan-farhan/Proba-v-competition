@@ -40,6 +40,9 @@ def load_images_path(data_path):
     return images_paths
 
 def load_srcnn_model(shape):
+    """
+    Loads the trained srcnn model
+    """
     srcnn_model = model(shape)
     optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.2, amsgrad=False)
     srcnn_model.compile(optimizer='adam', loss="mean_squared_error", metrics=['mean_squared_error']) 

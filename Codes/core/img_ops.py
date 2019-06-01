@@ -20,7 +20,7 @@ def load_hr_sm(scene_path):
 def load_lr_qm(scene_path,quality_map_only = False,lr_only = False):
     """
     Loads low resolution images and their corresponding quality map given path to scene directory
-    Can also loads LR images and Qm separately if the options are given
+    Can also load LR images and Qm separately if the options are given
     """
 
     # both Lr and Qm are loaded together
@@ -71,11 +71,11 @@ def upscaling_scene_images(scene_path):
         lrc = load_image(lrc_fn, dtype=np.bool)
         clearance.append( (np.sum(lrc), lrc_fn[-7:-4]) )
 
-            # determine subset of images of maximum clearance 
+        # determine subset of images of maximum clearance 
         maxcl = max([x[0] for x in clearance])
         maxclears = [x[1] for x in clearance if x[0] == maxcl]
 
-            # upscale and aggregate images with maximum clearance together
+        # upscale and aggregate images with maximum clearance together
         img = np.zeros( (384, 384), dtype=np.float)
         for idx in maxclears:
             lrfn = 'LR{}.png'.format(idx)
@@ -83,25 +83,40 @@ def upscaling_scene_images(scene_path):
             lr = load_image('/'.join([scene_path, lrfn]), dtype=np.uint16)
             lr_float = skimage.img_as_float(lr)
 
-                # bicubic upscaling
+            # bicubic upscaling
             img += skimage.transform.rescale(lr_float, scale=3, order=3, mode='edge', anti_aliasing=False, multichannel=False)
         img /= len(maxclears)
     return img
 
+
 def process_lr_images(scene_path,processing_type = "with_same_lr",fusion_type = "median"):
+    """
+    Processing the Low resolution images for taking care of non clear pixels.
+    
+    Two ways of processing which is decided by processing_type:
+    1) with_same_lr: By considering a 3x3 region across the non clear pixel 
+       and replacing it by the corresponding fusion_type central tendency measure(Mean, Median or Mode)
+
+    2) with_all_lr: By considering all the lr images and taking the corresponding 
+     fusion_type central tendency measure to replace the bad pixel.
+    """
     qm_images = load_lr_qm(scene_path, quality_map_only = True) 
     lr_images = load_lr_qm(scene_path, lr_only = True) 
+
+    # getting all those pixels which are bad in all the low resolution images
     pxl_nc_all_lr = np.where(np.sum(qm_images,axis = 0) == 0)
     pxl_coordinates = list(zip(pxl_nc_all_lr[0],pxl_nc_all_lr[1]))
 
     if processing_type == "with_same_lr":
         for lr_image,qm_image in zip(lr_images,qm_images):
+
+            #Padding the array 
             lr_padded = np.pad(lr_image,((1,1),(1,1)),'constant',constant_values=(np.nan,))
             for (x,y) in pxl_coordinates:
-                sub_array_xy = lr_padded[y:y+3,x:x+3]
-                avg_val = np.nanmean(sub_array_xy)
-                lr_image[x,y] = avg_val
-                qm_image[x,y] = True
+                sub_array_xy = lr_padded[y:y+3,x:x+3]    # small array around the bad pixel
+                avg_val = np.nanmean(sub_array_xy)       
+                lr_image[x,y] = avg_val                  # Replacing the bad pixel with the mean of pixel value of nearby pixels
+                qm_image[x,y] = True                     # marking it as clear pixel
 
     elif processing_type == "with_all_lr":
         if fusion_type == "mean":
@@ -113,16 +128,20 @@ def process_lr_images(scene_path,processing_type = "with_same_lr",fusion_type = 
 
         for lr_image,qm_image in zip(lr_images,qm_images):
             for (x,y) in pxl_coordinates:
-                lr_image[x,y] = lr_fused[x,y]
+                lr_image[x,y] = lr_fused[x,y]    # replacing the bad pixel with the central tendency measure at that pixel coordinate
                 qm_image[x,y] = True
 
     for lr_image,qm_image in zip(lr_images,qm_images):
-        lr_image[~qm_image] = np.nan
+        lr_image[~qm_image] = np.nan      # making all the remaining non clear pixels as NAN so that they won't have any impact on calculations
 
     return lr_images
  
 
 def median_image_scene(scene_path,with_clear = False,processing_type = "with_same_lr",fusion_type = "median"):
+    """ 
+    Return a median image from all the Low resolution images of a given scene. 
+    The images are also processed optionally
+    """
     if not with_clear:
         lr_images = [x[0] for x in load_lr_qm(scene_path)]
         median_img_scene = np.nanmedian(lr_images,axis = 0)
@@ -133,6 +152,11 @@ def median_image_scene(scene_path,with_clear = False,processing_type = "with_sam
         return median_img_scene
 
 def mean_image_scene(scene_path,with_clear = False,processing_type = "with_same_lr",fusion_type = "mean"):
+
+    """ 
+    Return a mean image from all the Low resolution images of a given scene. 
+    The images are also processed optionally
+    """
     if not with_clear:
         lr_images = [x[0] for x in load_lr_qm(scene_path)]
         mean_img_scene = np.nanmean(lr_images,axis = 0)
@@ -144,6 +168,11 @@ def mean_image_scene(scene_path,with_clear = False,processing_type = "with_same_
 
 
 def mode_image_scene(scene_path,with_clear = False,processing_type = "with_same_lr",fusion_type = "mode"):
+
+    """ 
+    Return a mode image from all the Low resolution images of a given scene. 
+    The images are also processed optionally
+    """
     if not with_clear:
         lr_images = [x[0] for x in load_lr_qm(scene_path)]
         mode_img_scene = scipy.stats.mode(lr_images, axis=0, nan_policy='omit').mode[0]
