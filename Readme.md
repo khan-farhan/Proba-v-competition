@@ -1,4 +1,4 @@
-This directory contains jupyter notebooks and python scripts for analysis of problem described in competition [PROBA-V Super Resolution](https://kelvins.esa.int/proba-v-super-resolution/home/). 
+This repository contains jupyter notebooks and python scripts for analysis of problem described in competition [PROBA-V Super Resolution](https://kelvins.esa.int/proba-v-super-resolution/home/). 
 
 #### Directory structure:
 ```sh
@@ -40,7 +40,7 @@ tree -L 2
 #### Training environment:
 Training is done on AWS ec2 instance with Deep learning ami already configured with TensorFlow and Keras 2 on Python 3 with CUDA 10.0 and MKL-DNN.
 
-#### Local environement:
+#### Local environment:
 Local development is done by using kaggel/python docker image.
 
 
